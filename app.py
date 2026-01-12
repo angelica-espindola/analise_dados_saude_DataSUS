@@ -4,9 +4,9 @@ import streamlit as st
 from sklearn.preprocessing import MinMaxScaler
 
 
-# ---------------------------
+
 # Carregar dados tratados
-# ---------------------------
+
 @st.cache_data
 def load_data():
     df = pd.read_excel("dados_tratados/base_final_sus.xlsx")
@@ -22,9 +22,9 @@ def load_data():
 
 df = load_data()
 
-# ---------------------------
+
 # Título do dashboard
-# ---------------------------
+
 st.title("Análise de Dados Públicos de Saúde de Campo Grande - MS e Ponta Porã - MS")
 
 st.markdown(
@@ -36,16 +36,16 @@ st.markdown(
 st.markdown("Dados coletados de Janeiro a Outubro dos anos de 2024 e 2025.")
 
 
-# ---------------------------
+
 # Filtro por cidade
-# ---------------------------
+
 cidade = st.selectbox("Selecione a cidade:", sorted(df['cidade'].unique()))
 df_cidade = df[df['cidade'] == cidade]
 st.write(f"### Dados da cidade: {cidade}")
 
-# ---------------------------
+
 # Gráfico 1: Internações e Óbitos por Sexo
-# ---------------------------
+
 # Agrupar dados por tipo de evento e sexo, reorganizando para o gráfico
 sexo_evento = (
     df_cidade.groupby('tipo_evento')[['masculino', 'feminino']]
@@ -68,9 +68,9 @@ st.plotly_chart(fig_sexo, use_container_width=True)
 
 st.write("🔹 Observação: A maioria das internações está concentrada entre mulheres, enquanto os óbitos estão concentrados entre homens, em ambas cidades.")
 
-# ---------------------------
+
 # Gráfico 2: Proporção de Internações vs Óbitos
-# ---------------------------
+
 # Agrupar e calcular total de casos por tipo de evento
 totais_tipo = (
     df_cidade.groupby('tipo_evento')[['masculino', 'feminino']]
@@ -100,21 +100,20 @@ st.plotly_chart(fig_totais, use_container_width=True)
 
 st.write("🔹 Observação: Internações representam a maior parte dos casos, enquanto os óbitos são menos frequentes, indicando que a maioria dos pacientes recebe tratamento hospitalar com sucesso.")
 
-# ---------------------------
+
 # Tabela resumida por tipo de evento e sexo
-# ---------------------------
+
 st.write("### Resumo de Internações e Óbitos por Sexo")
 st.dataframe(sexo_evento.pivot(index='tipo_evento', columns='Sexo', values='Total'))
 
-# ---------------------------
+
 # Fim do dashboard
-# ---------------------------
+
 st.markdown("Fonte: **DataSUS 2024-2025**")
 
 
-# ---------------------------
 # Ranking de Causas por Cidade
-# ---------------------------
+
 st.write(f"### Ranking de causas de internações e óbitos para {cidade}")
 
 # Internações
@@ -159,7 +158,7 @@ fig_obitos = px.bar(
     orientation='h',
     title=f"Top 10 Causas de Óbito — {cidade}",
     labels={'lista_morbidade_cid':'CID / Morbidade', 'total':'Número de Óbitos'},
-    color_discrete_sequence=['#d62728']  # vermelho
+    color_discrete_sequence=['#d62728'] 
 )
 fig_obitos.update_layout(yaxis={'categoryorder':'total descending'})
 st.plotly_chart(fig_obitos, use_container_width=True)
@@ -168,9 +167,9 @@ st.plotly_chart(fig_obitos, use_container_width=True)
 st.write("🔹 Observação: As principais causas de óbito na cidade indicam os problemas de saúde mais críticos e onde políticas públicas podem ser direcionadas.")
 
 
-# ---------------------------
+
 # Comparativo das 5 principais causas de Internações e Óbitos entre cidades
-# ---------------------------
+
 
 st.write("### Comparativo das 5 Principais Causas de Internações entre Cidades")
 
@@ -203,7 +202,6 @@ fig_internacoes_comp.update_layout(yaxis={'categoryorder':'total descending'})
 st.plotly_chart(fig_internacoes_comp, use_container_width=True)
 st.write("🔹 Observação:As cinco principais causas de internação em ambas as cidades são: fratura de ossos, parto único espontâneo, pneumonia, trauma múltiplo e catarata. Campo Grande apresenta muito mais internações em todas essas causas, indicando maior demanda hospitalar. Já Ponta Porã tem menos casos, mas as causas principais são semelhantes, mostrando perfis de saúde parecidos.")
 
-# ---------------------------------------------------
 
 st.write("### Comparativo das 5 Principais Causas de Óbitos entre Cidades")
 
@@ -237,9 +235,8 @@ st.plotly_chart(fig_obitos_comp, use_container_width=True)
 st.write("🔹 Observação: Em Campo Grande, as mortes são majoritariamente por doenças infecciosas, com Pneumonia liderando, seguida de outras infecções bacterianas e problemas respiratórios e urinários. Em Ponta Porã, Pneumonia também é a principal causa, mas há maior diversidade de causas, incluindo Septicemia, doenças respiratórias, problemas vasculares cerebrais e transtornos metabólicos. Isso indica que, enquanto Pneumonia é um desafio comum, Ponta Porã requer estratégias de saúde pública mais amplas devido à variedade de fatores de risco.")
 
 
-# =====================================================
+
 # MODELAGEM DE RISCO EPIDEMIOLÓGICO (IRE)
-# =====================================================
 
 st.markdown("---")
 st.write("## 🚦 Índice de Risco Epidemiológico (IRE)")
@@ -249,9 +246,9 @@ st.write(
     "vulnerabilidade por sexo."
 )
 
-# ---------------------------
-# Base para modelagem (mesmo filtro de cidade)
-# ---------------------------
+
+# Base para modelagem
+
 
 df_modelo = df[df['cidade'] == cidade]
 
@@ -287,9 +284,8 @@ base_risco = internacoes.merge(
 
 base_risco['total_obitos'] = base_risco['total_obitos'].fillna(0)
 
-# ---------------------------
+
 # Indicadores epidemiológicos
-# ---------------------------
 
 # Frequência total de casos
 base_risco['frequencia'] = (
@@ -306,9 +302,8 @@ base_risco['dif_sexo'] = (
     abs(base_risco['masculino'] - base_risco['feminino']) / base_risco['frequencia']
 )
 
-# ---------------------------
 # Padronização dos indicadores (0 a 1)
-# ---------------------------
+
 
 scaler = MinMaxScaler()
 
@@ -316,9 +311,8 @@ base_risco[['freq_norm', 'letal_norm', 'sexo_norm']] = scaler.fit_transform(
     base_risco[['frequencia', 'letalidade', 'dif_sexo']]
 )
 
-# ---------------------------
+
 # Índice de Risco Epidemiológico (IRE)
-# ---------------------------
 
 # Ajuste dos pesos: mais peso para frequência, depois letalidade, pouco para sexo
 base_risco['IRE'] = (
@@ -327,8 +321,7 @@ base_risco['IRE'] = (
     0.10 * base_risco['sexo_norm']     # sexo tem menor peso
 )
 
-# ---------------------------
-# Classificação do risco (mantida)
+# Classificação do risco
 def classificar_risco(ire):
     if ire >= 0.6:
         return 'Alto Risco 🔴'
@@ -339,9 +332,8 @@ def classificar_risco(ire):
 
 base_risco['nivel_risco'] = base_risco['IRE'].apply(classificar_risco)
 
-# ---------------------------
+
 # Tabela de risco por CID
-# ---------------------------
 
 st.write(f"### Classificação de Risco Epidemiológico por CID — {cidade}")
 
@@ -351,9 +343,8 @@ st.dataframe(
     ].sort_values('IRE', ascending=False)
 )
 
-# ---------------------------
 # Gráfico: Top 10 CIDs por risco
-# ---------------------------
+
 
 fig_risco = px.bar(
     base_risco.sort_values('IRE', ascending=False).head(10),
