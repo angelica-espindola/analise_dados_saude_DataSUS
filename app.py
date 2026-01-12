@@ -4,7 +4,6 @@ import streamlit as st
 from sklearn.preprocessing import MinMaxScaler
 
 
-
 # Carregar dados tratados
 
 @st.cache_data
@@ -166,6 +165,72 @@ st.plotly_chart(fig_obitos, use_container_width=True)
 # Comentário abaixo do gráfico
 st.write("🔹 Observação: As principais causas de óbito na cidade indicam os problemas de saúde mais críticos e onde políticas públicas podem ser direcionadas.")
 
+
+# COMPARATIVO DE ÓBITOS POR SEXO
+
+
+st.markdown("---")
+st.write(f"### Comparativo das Principais Causas de Óbitos por Sexo — {cidade}")
+
+# Filtrar apenas óbitos
+obitos_sexo = (
+    df_cidade[df_cidade['tipo_evento'] == 'Óbito']
+    .groupby('lista_morbidade_cid')[['masculino', 'feminino']]
+    .sum()
+    .reset_index()
+)
+
+# Criar total para ranking
+obitos_sexo['total'] = obitos_sexo[['masculino', 'feminino']].sum(axis=1)
+
+# Selecionar Top 10 causas gerais
+top10_causas = (
+    obitos_sexo
+    .sort_values('total', ascending=False)
+    .head(10)
+)
+
+# Transformar para formato longo (long format)
+obitos_long = top10_causas.melt(
+    id_vars='lista_morbidade_cid',
+    value_vars=['masculino', 'feminino'],
+    var_name='Sexo',
+    value_name='Óbitos'
+)
+
+# Gráfico de barras comparativo
+fig_obitos_sexo = px.bar(
+    obitos_long,
+    x='Óbitos',
+    y='lista_morbidade_cid',
+    color='Sexo',
+    barmode='group',
+    orientation='h',
+    title=f"Top 10 Causas de Óbito por Sexo — {cidade}",
+    labels={
+        'lista_morbidade_cid': 'CID / Morbidade',
+        'Óbitos': 'Número de Óbitos',
+        'Sexo': 'Sexo'
+    },
+    color_discrete_map={
+        'masculino': '#1f77b4',
+        'feminino': '#ff7f0e'
+    }
+)
+
+fig_obitos_sexo.update_layout(
+    yaxis={'categoryorder': 'total descending'}
+)
+
+st.plotly_chart(fig_obitos_sexo, use_container_width=True)
+
+# Observação interpretativa
+st.write(
+    "🔹 **Observação:** O gráfico mostra diferenças relevantes nas causas de óbito entre homens e mulheres. "
+    "Em geral, homens apresentam maior frequência de óbitos por doenças cardiovasculares, infecções e traumas, "
+    "enquanto mulheres são mais impactadas por doenças crônicas e infecções, indicando a necessidade "
+    "de estratégias de prevenção específicas por sexo."
+)
 
 
 # Comparativo das 5 principais causas de Internações e Óbitos entre cidades
